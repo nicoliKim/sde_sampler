@@ -22,11 +22,11 @@ class Phi4Distr(Distribution):
     """
     def __init__(
         self,
-        dim: int = 2,
+        dim: int = 4,
         kappa: float = 0.3,
         lambd: float = 0.022,
-        n_rows: int = 4,
-        n_cols: int = 16,
+        n_rows: int = 2,
+        n_cols: int = 2,
         **kwargs,
     ):
         """Constructs all the necessary attributes for the `Phi4Action` action.
@@ -43,7 +43,7 @@ class Phi4Distr(Distribution):
         """
         # if not dim == 2:
         #   raise ValueError(r"`dim` needs to be `2` for $\phi^4$-theory.")
-        super().__init__(dim=2, **kwargs)
+        super().__init__(dim=4, **kwargs)
         self.kappa = kappa
         self.lambd = lambd
         self.n_rows = n_rows
@@ -71,17 +71,17 @@ class Phi4Distr(Distribution):
         
         n_r, n_c = self.n_rows, self.n_cols
         kinetic, mass, inter = 0., 0., 0.
-        action = torch.zeros(x.shape[0])
+        action = torch.zeros(x.shape[0],1)
         
         if x.shape[1] != n_r * n_c:
             raise ValueError(f"Invalid lattice shape.\n "
                             f"Choose n_rows and n_cols in such a way that n_rows*n_cols={x.shape[1]}.")
         
-        for config in range(x.shape[0]):
-            lattice_x = x[config].view(4, 16)
+        for i_config in range(x.shape[0]):
+            lattice_x = x[i_config].view(n_r, n_c)
             for row in range(n_r):
                 for col in range(n_c):
-                    phi += lattice_x[row, col]                               #value of the field at the point (row,col)
+                    phi = lattice_x[row, col]                               #value of the field at the point (row,col)
                     mass += (1 - 2 * self.lambd) * phi ** 2                  #mass term at this point
                     inter = self.lambd * phi ** 4                           #interaction term at this point
                     
@@ -95,8 +95,7 @@ class Phi4Distr(Distribution):
                         phi_down = lattice_x[(row +1) % n_r, col]
                         kinetic += (-2 * self.kappa) * phi * phi_down       #kinetic contribution downwards
             
-            action[config] = kinetic + mass + inter
-        
+            action[i_config] = kinetic + mass + inter
         return action
 
     def score(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
@@ -115,23 +114,14 @@ class Phi4Distr(Distribution):
         """
         
         kinetic, mass, inter = 0., 0., 0.
-        score = torch.zeros(x.shape[0])
-        
+        score = torch.zeros(x.shape)
         #Since the interaction between neighbors is quadratic, the derivative of the action is actually a free theory
         #This means that there's no need to specify any geometry
         
         for i_config in range(x.shape[0]):
-            config = x[i_config]
-            for d in range(config.shape):
-                    phi = config[d]                               #value of the field at the dimension d
-                    mass += (1 - 2 * self.lambd) * phi            #derivative of the mass term at this point
-                    inter += 3 * self.lambd * phi ** 3            #derivative of the interaction term at this point
-                    kinetic += (-2 * self.kappa) * phi            #derivative of the kinetic term at this point
-            
-            score[config] = kinetic + mass + inter
-        
+            phi = x[i_config,:]
+            mass = 2 * (1 - 2 * self.lambd) * phi        #derivative of the mass term at this point
+            inter = 4 * self.lambd * phi ** 3            #derivative of the interaction term at this point
+            kinetic = (-2 * self.kappa) * phi            #derivative of the kinetic term at this point
+            score[i_config] = kinetic + mass + inter
         return score
-
-
-    def marginal(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        return self.pdf(x)
