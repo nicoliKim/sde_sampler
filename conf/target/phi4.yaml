@@ -1,5 +1,5 @@
 _target_: sde_sampler.distr.phi4.Phi4Distr
-kappa: 0.3
+kappa: 0.2
 lambd : 0.022
-dim: 4
+dim: ${eval:"int(${.lat_shape[0]}*${.lat_shape[1]})"}
 lat_shape: [2, 2]

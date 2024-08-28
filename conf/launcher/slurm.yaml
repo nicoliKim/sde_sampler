@@ -8,7 +8,6 @@ hydra:
       _target_: hydra.experimental.callbacks.LogJobReturnCallback
   launcher:
     nodes: 1
-    gpus_per_node: 1
     cpus_per_task: 2
     timeout_min: 4320
     constraint:
@@ -17,3 +16,5 @@ hydra:
     name: ${hydra.run.dir}/${hydra.job.override_dirname}
     max_num_timeout: 3
     stderr_to_stdout: true
+    additional_parameters:
+      gres: gpu:a100:1
