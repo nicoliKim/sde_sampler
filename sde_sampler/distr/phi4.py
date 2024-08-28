@@ -85,8 +85,9 @@ class Phi4Distr(Distribution):
         mass = (1 - 2 * self.lambd) * x ** 2
         inter = self.lambd * x ** 4
         action = (kinetic + mass + inter).reshape(len(x), -1)
-        return action.sum(-1, keepdim=True)
+        return -action.sum(-1, keepdim=True)
 
+    '''
     def score(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """Computes the derivative of the phi-4 action, i.e., the score term for the Boltzmann distribution.
 
@@ -101,9 +102,10 @@ class Phi4Distr(Distribution):
            Score function (grad of unnormalized log prob) evaluated at the given lattice configurations.
 
         """
-        # Reshape not needed here as there's no interaction term, i.e., sum over nearest neighbours.
-        # x = x.unsqueeze(dim=-1).reshape(len(x), self.lat_shape[0], self.lat_shape[1])
-        free = 2 * (1 - 2 * self.lambd - 2 * self.kappa) * x
+        x = x.unsqueeze(dim=-1).reshape(len(x), self.lat_shape[0], self.lat_shape[1])
+        kinetic = -2 * self.kappa * (torch.roll(x, 1, -1) + torch.roll(x, 1, -2))
+        free = 2 * (1 - 2 * self.lambd) * x
         inter = 4 * self.lambd * x ** 3
-        der_action = (free + inter)
-        return der_action
+        der_action = (kinetic + free + inter).reshape(len(x), -1)
+        return -der_action
+    '''
