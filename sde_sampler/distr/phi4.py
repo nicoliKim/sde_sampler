@@ -24,8 +24,8 @@ class Phi4Distr(Distribution):
     def __init__(
         self,
         dim: int = 4,
-        kappa: float = 1.,
-        lambd: float = 1.,
+        kappa: float = 0.02,
+        lambd: float = 0.022,
         lat_shape: list = None,
         **kwargs,
     ):
@@ -81,14 +81,13 @@ class Phi4Distr(Distribution):
 
         """
         og_shape = x.shape
-        x = x.view(x[:,0].shape[0], self.lat_shape[0], self.lat_shape[1])
+        x = x.view(x[:, 0].shape[0], self.lat_shape[0], self.lat_shape[1])
         kinetic = (-2 * self.kappa) * x * (torch.roll(x, 1, -1) + torch.roll(x, 1, -2))
         mass = (1 - 2 * self.lambd) * x ** 2
         inter = self.lambd * x ** 4
-        action = (kinetic + mass + inter).reshape(og_shape, -1)
+        action = (kinetic + mass + inter).reshape(og_shape)
         return -action.sum(-1, keepdim=True)
 
-    
     def score(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """Computes the derivative of the phi-4 action, i.e., the score term for the Boltzmann distribution.
 
@@ -104,10 +103,10 @@ class Phi4Distr(Distribution):
 
         """
         og_shape = x.shape
-        x = x.view(x[:,0].shape[0], self.lat_shape[0], self.lat_shape[1])
+        x = x.view(x[:, 0].shape[0], self.lat_shape[0], self.lat_shape[1])
         kinetic = -4 * self.kappa * (torch.roll(x, 1, -1) + torch.roll(x, 1, -2))
         free = 2 * (1 - 2 * self.lambd) * x
         inter = 4 * self.lambd * x ** 3
-        der_action = (kinetic + free + inter).reshape(og_shape, -1)
+        der_action = (kinetic + free + inter).reshape(og_shape)
         return -der_action
     
