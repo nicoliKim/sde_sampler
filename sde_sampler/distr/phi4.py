@@ -23,9 +23,9 @@ class Phi4Distr(Distribution):
     """
     def __init__(
         self,
-        dim: int = 16,
-        kappa: float = 0.3,
-        lambd: float = 0.022,
+        dim: int = 4,
+        kappa: float = 1.,
+        lambd: float = 1.,
         lat_shape: list = None,
         **kwargs,
     ):
@@ -45,7 +45,7 @@ class Phi4Distr(Distribution):
         """
         super().__init__(dim=2, **kwargs)
         if lat_shape is None:
-            lat_shape = [4, 4]
+            lat_shape = [2, 2]
 
         self.kappa = kappa
         self.lambd = lambd
@@ -53,11 +53,11 @@ class Phi4Distr(Distribution):
 
         if len(lat_shape) != 2:
             raise ValueError(f"The lattice configuration has an invalid shape {len(self.lat_shape)} instead of 2.\n "
-                             "Only 2D systems are supported for the `Phi4Action` action.")
+                            "Only 2D systems are supported for the `Phi4Action` action.")
 
         if prod != dim:
             raise ValueError(f"The number of dimension {dim} does not match the desired lattice"
-                             f" shape {prod}. Please check and try again!")
+                            f" shape {prod}. Please check and try again!")
 
         self.lat_shape = lat_shape
 
@@ -72,7 +72,7 @@ class Phi4Distr(Distribution):
         Returns
         -------
         :py:obj:`torch.Tensor`
-           Action evaluated at the given lattice configurations.
+            Action evaluated at the given lattice configurations.
 
         Raises
         ------
@@ -80,14 +80,15 @@ class Phi4Distr(Distribution):
             When the shape of the lattice configuration is not of length 3.
 
         """
-        x = x.unsqueeze(dim=-1).reshape(len(x), self.lat_shape[0], self.lat_shape[1])
+        og_shape = x.shape
+        x = x.view(x[:,0].shape[0], self.lat_shape[0], self.lat_shape[1])
         kinetic = (-2 * self.kappa) * x * (torch.roll(x, 1, -1) + torch.roll(x, 1, -2))
         mass = (1 - 2 * self.lambd) * x ** 2
         inter = self.lambd * x ** 4
-        action = (kinetic + mass + inter).reshape(len(x), -1)
+        action = (kinetic + mass + inter).reshape(og_shape, -1)
         return -action.sum(-1, keepdim=True)
 
-    '''
+    
     def score(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """Computes the derivative of the phi-4 action, i.e., the score term for the Boltzmann distribution.
 
@@ -99,13 +100,14 @@ class Phi4Distr(Distribution):
         Returns
         -------
         :py:obj:`torch.Tensor`
-           Score function (grad of unnormalized log prob) evaluated at the given lattice configurations.
+            Score function (grad of unnormalized log prob) evaluated at the given lattice configurations.
 
         """
-        x = x.unsqueeze(dim=-1).reshape(len(x), self.lat_shape[0], self.lat_shape[1])
-        kinetic = -2 * self.kappa * (torch.roll(x, 1, -1) + torch.roll(x, 1, -2))
+        og_shape = x.shape
+        x = x.view(x[:,0].shape[0], self.lat_shape[0], self.lat_shape[1])
+        kinetic = -4 * self.kappa * (torch.roll(x, 1, -1) + torch.roll(x, 1, -2))
         free = 2 * (1 - 2 * self.lambd) * x
         inter = 4 * self.lambd * x ** 3
-        der_action = (kinetic + free + inter).reshape(len(x), -1)
+        der_action = (kinetic + free + inter).reshape(og_shape, -1)
         return -der_action
-    '''
+    
