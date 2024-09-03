@@ -15,7 +15,7 @@ EXPECTATION_FNS: dict[str, Callable] = {
     "sum": lambda x: x.sum(dim=-1, keepdims=True),
     "square_minus_sum": lambda x: (x**2 - x).sum(dim=-1, keepdims=True),
     "mag": lambda x: x.mean(dim=-1, keepdims=True),
-    "absmag": lambda x: torch.abs(x.mean(dim=-1, keepdims=True)),
+    "absmag": lambda x: torch.abs(x.mean(dim=-1, keepdims=True))
 }
 
 DATA_DIR = Path(__file__).parents[2] / "data"
