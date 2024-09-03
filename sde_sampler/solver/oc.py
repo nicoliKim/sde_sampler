@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import math
 from typing import Callable
 
 import torch
@@ -94,9 +95,11 @@ class TrainableDiff(Trainable):
         )
 
         # Update results
+        lat_vol = math.prod(self.target.lat_shape)
         results.metrics["eval/sample_time"] = time.time() - start_time
         results.metrics.update(add_results.metrics)
         results.log_norm_const_preds.update(add_results.log_norm_const_preds)
+        results.metrics["free_energy"] = -results.log_norm_const_preds['log_norm_const_is'] / lat_vol
 
         # Sample trajectories of inference proc
         if (

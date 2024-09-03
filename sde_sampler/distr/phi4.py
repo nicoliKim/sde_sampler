@@ -60,6 +60,13 @@ class Phi4Distr(Distribution):
                             f" shape {prod}. Please check and try again!")
 
         self.lat_shape = lat_shape
+        # reference vals obtained with HMC on small volumes 8x8
+        if self.kappa == 0.2:
+            self.expectations['absmag'] = 0.6239
+        if self.kappa == 0.3:
+            self.expectations['absmag'] = 2.0870
+        if self.kappa == 0.5:
+            self.expectations['absmag'] = 4.8298
 
     def unnorm_log_prob(self, x: torch.Tensor) -> torch.Tensor:
         """Takes a batch of lattice configurations and evaluates the `Phi4Action` action in batches.
